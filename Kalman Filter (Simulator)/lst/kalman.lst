@@ -1,0 +1,99 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000                 AREA             KALMANCODE, CODE ;Define area t
+                                                            o be code
+    2 00000000                 EXPORT           kalman      ;Declare symbol to 
+                                                            be exported
+    3 00000000         
+    4 00000000         kalman
+    5 00000000         ;r0 contains the address to the Kalman Filter struct and
+                        s0 contains the float measurement.
+    6 00000000 ED6D 0A02       VPUSH            {s1-s2}     ;Push two scratch r
+                                                            egisters.
+    7 00000004         
+    8 00000004         ;PART 1: p = p + q
+    9 00000004 EDD0 0A00       vldr             s1, [r0]    ;Load float q
+   10 00000008 ED90 1A03       vldr             s2, [r0, #12] ;Load float p
+   11 0000000C EE31 1A20       vadd.F32         s2, s1      ;p = p + q we need 
+                                                            to do .F32 to indic
+                                                            ate single precisio
+                                                            n addition
+   12 00000010         
+   13 00000010         ;PART 2: k = p/(p + r)
+   14 00000010 EDD0 0A01       vldr             s1, [r0, #4] ;Load float r sinc
+                                                            e q is not used aga
+                                                            in.
+   15 00000014 EE70 0A81       vadd.F32         s1, s2      ;p+r store the resu
+                                                            lt in s1
+   16 00000018 EEC1 0A20       vdiv.F32         s1, s2, s1  ;k = p/(p+r) store 
+                                                            the result in s1 wh
+                                                            ich is now k
+   17 0000001C         
+   18 0000001C         ;PART 3: p = (1 - k) * p
+   19 0000001C         ;At this point s1 = k and s2 = p
+   20 0000001C EE01 1A60       vmls.F32         s2, s2, s1  ; p * (1 - k) = p -
+                                                             p*k store into s2
+   21 00000020 ED80 1A03       vstr             s2, [r0, #12] ;Store p since we
+                                                             will not need it a
+                                                            nymore
+   22 00000024         
+   23 00000024         ;PART 4: x = x + k * (measurement - x)
+   24 00000024         ;At this point s1 = k and s2 is scratch
+   25 00000024 ED90 1A02       vldr             s2, [r0, #8] ;Load x into s2
+   26 00000028 EE30 0A41       vsub.F32         s0, s2      ; measurement - x s
+                                                            tore it into s0
+   27 0000002C EE20 0A20       vmul.F32         s0, s1      ; k * (measurement 
+                                                            - x) store into s0
+   28 00000030 EE31 1A00       vadd.F32         s2, s0      ; x + k * (measurem
+                                                            ent - x) store into
+                                                             s2
+   29 00000034         
+   30 00000034         ;Now store s1 = k and s2 = x
+   31 00000034 EDC0 0A04       vstr             s1, [r0, #16]
+   32 00000038 ED80 1A02       vstr             s2, [r0, #8]
+   33 0000003C         
+   34 0000003C EEB0 0A41       vmov.F32         s0, s2      ;Move the result of
+                                                             s2 which is x into
+                                                             the return registe
+                                                            r s0.
+   35 00000040         
+   36 00000040 ECFD 0A02       VPOP             {s1-s2}
+   37 00000044 4770            BX               R14
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+   38 00000046                 END
+Command Line: --debug --xref --cpu=Cortex-M4.fp --apcs=interwork --depend=.\obj
+\kalman.d -o.\obj\kalman.o -IC:\Keil\ARM\RV31\INC -IC:\Keil\ARM\CMSIS\Include -
+IC:\Keil\ARM\Inc\ST\STM32F4xx --list=.\lst\kalman.lst ASM\kalman.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+KALMANCODE 00000000
+
+Symbol: KALMANCODE
+   Definitions
+      At line 1 in file ASM\kalman.s
+   Uses
+      None
+Comment: KALMANCODE unused
+kalman 00000000
+
+Symbol: kalman
+   Definitions
+      At line 4 in file ASM\kalman.s
+   Uses
+      At line 2 in file ASM\kalman.s
+Comment: kalman used once
+2 symbols
+333 symbols in table
